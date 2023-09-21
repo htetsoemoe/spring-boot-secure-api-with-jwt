@@ -11,6 +11,8 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.ninja.security.token.TokenRepository;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
 	
 	private final JwtService jwtService;
 	private final UserDetailsService userDetailsService;
+	private final TokenRepository tokenRepository;
 
 	@Override
 	protected void doFilterInternal(@NonNull HttpServletRequest request, 
@@ -45,7 +48,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
 		
 		if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 			UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-			if (jwtService.isTokenValid(jwt, userDetails)) {
+			
+			// JWT Token need to no_expried and no_revoke, either unauthorized access
+			var isTokenIsValid = tokenRepository.findByToken(jwt)
+					.map(t -> !t.isExpired() && !t.isRevoked())
+					.orElse(false);
+			
+			if (jwtService.isTokenValid(jwt, userDetails) && isTokenIsValid) {
 				
 				// This constructor should only be used by AuthenticationManager or AuthenticationProvider implementations that are satisfied with 
 				// producing a trusted (i.e. isAuthenticated() = true)authentication token.

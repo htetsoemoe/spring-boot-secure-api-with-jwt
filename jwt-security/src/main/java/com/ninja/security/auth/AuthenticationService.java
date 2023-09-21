@@ -59,7 +59,10 @@ public class AuthenticationService {
 		// Generate JWT Token
 		var jwt = jwtService.generateToken(user);
 		
-		// Save Access Token
+		// Before adding new generated token to database, need to revoke and expire all previous tokens
+		revokeAllUserTokens(user);
+		
+		// After revoke all previous tokens, Save New Access Token
 		saveUserToken(user, jwt);
 		
 		return AuthenticationResponse.builder()
@@ -76,6 +79,18 @@ public class AuthenticationService {
 				.revoked(false)
 				.build();
 		tokenRepository.save(token);
+	}
+	
+	private void revokeAllUserTokens(User user) {
+		var validUserTokens = tokenRepository.findAllValidTokenByUser(user.getId());
+		if (validUserTokens.isEmpty()) {
+			return;
+		}
+		validUserTokens.forEach(token -> {
+			token.setExpired(true);
+			token.setRevoked(true);
+		});
+		tokenRepository.saveAll(validUserTokens);
 	}
 
 }
