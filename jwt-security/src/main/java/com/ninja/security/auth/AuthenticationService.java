@@ -9,6 +9,9 @@ import com.ninja.security.config.JwtService;
 import com.ninja.security.entity.Role;
 import com.ninja.security.entity.User;
 import com.ninja.security.entity.UserRepository;
+import com.ninja.security.token.Token;
+import com.ninja.security.token.TokenRepository;
+import com.ninja.security.token.TokenType;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,6 +21,7 @@ public class AuthenticationService {
 	
 	private final PasswordEncoder passwordEncoder;
 	private final UserRepository userRepository;
+	private final TokenRepository tokenRepository;
 	private final JwtService jwtService;
 	private final AuthenticationManager authenticationManager;
 	
@@ -32,10 +36,13 @@ public class AuthenticationService {
 				.build();
 		
 		// Save Registered User to Database
-		userRepository.save(user);
+		var savedUser = userRepository.save(user);
 		
 		// Generate JWT token using user(UserDetails)
 		String jwt = jwtService.generateToken(user);
+		
+		// Save Access Token
+		saveUserToken(savedUser, jwt);
 		
 		return AuthenticationResponse.builder()
 				.token(jwt)
@@ -44,8 +51,7 @@ public class AuthenticationService {
 	
 
 	public AuthenticationResponse authenticate(AuthenticationRequest request) {
-		authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), 
-						request.getPassword()));
+		authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 		
 		// If Authentication Success
 		var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
@@ -53,9 +59,23 @@ public class AuthenticationService {
 		// Generate JWT Token
 		var jwt = jwtService.generateToken(user);
 		
+		// Save Access Token
+		saveUserToken(user, jwt);
+		
 		return AuthenticationResponse.builder()
 				.token(jwt)
 				.build();
+	}
+	
+	private void saveUserToken(User user, String jwtToken) {
+		var token = Token.builder()
+				.user(user)
+				.token(jwtToken)
+				.tokenType(TokenType.BEARER)
+				.expired(false)
+				.revoked(false)
+				.build();
+		tokenRepository.save(token);
 	}
 
 }
