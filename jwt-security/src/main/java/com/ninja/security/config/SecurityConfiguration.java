@@ -1,5 +1,6 @@
 package com.ninja.security.config;
 
+import org.apache.catalina.connector.Response;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -10,6 +11,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.AllArgsConstructor;
 
