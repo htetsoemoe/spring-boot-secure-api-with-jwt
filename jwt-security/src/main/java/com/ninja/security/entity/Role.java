@@ -1,6 +1,5 @@
 package com.ninja.security.entity;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -13,7 +12,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum Role {
 
-	USER(Collections.emptySet()), 
+	USER(
+			Set.of(
+					Permission.USER_READ
+			)
+	), 
 	ADMIN(
 			Set.of(
 					Permission.ADMIN_READ,
@@ -44,7 +47,7 @@ public enum Role {
 				.collect(Collectors.toList());
 		
 		authorities.add(new SimpleGrantedAuthority("ROLE_" + this.name()));
-		
+		System.out.println(authorities.toString());
 		return authorities;
 	}
 }
